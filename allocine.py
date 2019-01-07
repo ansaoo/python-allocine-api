@@ -1,9 +1,10 @@
 import hashlib
+import argparse
 from base64 import b64encode
 try: # python3
-	from urllib.parse import urlencode
+	from urllib.parse import urlencode, quote_plus
 except: #python2
-	from urllib import urlencode
+	from urllib import urlencode, quote_plus
 import requests
 import time
 import json
@@ -39,7 +40,7 @@ def do_request(method, params):
 #   filter (optionnal) : filter depending on the result type ("movie", "theater", "person", "news", "tvseries", separated by a comma)
 #   count (optionnal) : number of results to return (should be an integer)
 #   page (optionnal) : number of the results page to return (default is 10 results by page)
-def search(string, format="json", filter=None, count=None, page=None):
+def search(string, format="json", filter=None, count=None, page=None, **kwargs):
     data = {'q': str(string), 'format': str(format)}
     if filter is not None:
         data["filter"] = filter.replace(",", "%2C")
@@ -57,7 +58,7 @@ def search(string, format="json", filter=None, count=None, page=None):
 #   format (optionnal) : returns the result in JSON or XML format ("json" or "xml", default set to JSON)
 #   filter (optionnal) : filter depending on the result type ("movie", "theater", "person", "news", "tvseries", separated by a comma)
 #   striptags (optionnal) : remove the HTML tags from the value returned ("synopsis", "synopsisshort", separated by a comma)
-def movie(code, profile=None, mediafmt=None, format="json", filter=None, striptags=None):
+def movie(code, profile=None, mediafmt=None, format="json", filter=None, striptags=None, **kwargs):
     data = {'code': str(code), 'format': format}
     if profile is not None:
         data["profile"] = profile
@@ -260,3 +261,23 @@ def episode(code, profile=None, mediafmt=None, format="json", striptags=None):
     if striptags is not None:
         data["striptags"] = striptags
     return do_request("episode", data)
+
+
+if __name__ == "__main__":
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('function',
+                            default='search',
+                            type=str,
+                            choices=['search','movie'])
+    arg_parser.add_argument('keyword')
+    arg_parser.add_argument('--filter',
+                            type=str)
+
+    args = arg_parser.parse_args()
+    function = {
+            'search': search,
+            'movie': movie
+    }
+    
+    pprint(function[args.function](quote_plus(args.keyword),**vars(args)))
+
